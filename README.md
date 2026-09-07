@@ -1,2 +1,3 @@
-# F1_analysis
-Made for fun, but gained alot of insights from data and how to use it 
+# Visuals
+
+Add dashboard screenshots and exported charts here.

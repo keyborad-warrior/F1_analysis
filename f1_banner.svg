@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300">
+<rect width="1200" height="300" fill="#111827"/>
+<text x="70" y="125" font-family="Arial" font-size="54" font-weight="700" fill="white">F1 Pit Stop Analysis</text>
+<text x="73" y="185" font-family="Arial" font-size="25" fill="#d1d5db">Data Analytics • Visualization • Streamlit Dashboard</text>
+<text x="73" y="230" font-family="Arial" font-size="20" fill="#9ca3af">Python | Pandas | Plotly | KaggleHub</text>
+</svg>
