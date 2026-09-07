@@ -1,16 +1,16 @@
-# Project Documentation
+# F1 Pit Stop Analysis - Project Documentation
 
 ## Problem Statement
-Raw Formula 1 datasets contain useful information but are difficult to explore directly. This project converts the data into an interactive analytics dashboard.
+Raw F1 historical data is difficult to interpret directly. The project transforms it into useful analytical views.
 
 ## Solution
-Python and Pandas are used for preparation and analysis, Plotly for visualization, and Streamlit for the dashboard.
+A Python/Pandas pipeline prepares the data and Plotly/Streamlit present the results interactively.
 
-## Inputs
-Race, driver, constructor, results, circuit, and pit-stop data.
+## Main Inputs
+Pit stops, races, drivers, results, constructors, and circuits.
 
-## Outputs
-Interactive charts, pit-stop rankings, driver statistics, historical trends, and race-level analysis.
+## Main Outputs
+Pit-stop metrics, yearly trends, driver analysis, rankings, and dashboard views.
 
-## Limitation
-The main historical Kaggle dataset ends in 2020. Current telemetry requires a current source such as FastF1.
+## Limitations
+The primary historical dataset ends in 2020. Current telemetry requires a separate live-data source.
