@@ -1,0 +1,282 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .tab { padding: 8px 16px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--color-text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-text-primary); font-weight: 500; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 14px 16px; }
+  .metric-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .metric-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .chart-wrap { position: relative; width: 100%; margin-bottom: 1.5rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; font-size: 12px; color: var(--color-text-secondary); }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .section-label { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .driver-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; }
+  .driver-row:last-child { border-bottom: none; }
+  .driver-pos { width: 20px; font-weight: 500; color: var(--color-text-secondary); }
+  .driver-name { flex: 1; font-weight: 500; }
+  .driver-team { flex: 1; color: var(--color-text-secondary); }
+  .driver-pts { font-weight: 500; }
+  .bar-cell { flex: 2; }
+  .mini-bar-bg { height: 6px; background: var(--color-background-secondary); border-radius: 3px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; border-radius: 3px; }
+  .controls { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+  .controls select { font-size: 13px; padding: 6px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+  .network-svg { width: 100%; border-radius: var(--border-radius-lg); border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); }
+</style>
+
+<h2 class="sr-only">F1 race analysis dashboard covering driver standings, pit stop performance, qualifying prediction, and driver–team network</h2>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('standings')">Driver standings</button>
+  <button class="tab" onclick="switchTab('pitstops')">Pit stop analysis</button>
+  <button class="tab" onclick="switchTab('qualifying')">Qualifying predictor</button>
+  <button class="tab" onclick="switchTab('network')">Driver–team network</button>
+</div>
+
+<div id="standings" class="panel active">
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Season leader</div><div class="metric-value">Verstappen</div><div class="metric-sub">Red Bull</div></div>
+    <div class="metric"><div class="metric-label">Points lead</div><div class="metric-value">47</div><div class="metric-sub">Over Hamilton</div></div>
+    <div class="metric"><div class="metric-label">Races completed</div><div class="metric-value">12</div><div class="metric-sub">of 23</div></div>
+    <div class="metric"><div class="metric-label">Constructors leader</div><div class="metric-value">Red Bull</div><div class="metric-sub">384 pts</div></div>
+  </div>
+  <div class="section-label">Driver standings</div>
+  <div id="standings-list"></div>
+</div>
+
+<div id="pitstops" class="panel">
+  <div class="metric-grid" style="grid-template-columns: repeat(3,1fr);">
+    <div class="metric"><div class="metric-label">Fastest pit stop</div><div class="metric-value">1.82s</div><div class="metric-sub">Red Bull · Bahrain</div></div>
+    <div class="metric"><div class="metric-label">Avg pit stop</div><div class="metric-value">2.61s</div><div class="metric-sub">All teams</div></div>
+    <div class="metric"><div class="metric-label">Undercuts this season</div><div class="metric-value">17</div><div class="metric-sub">Successful</div></div>
+  </div>
+  <div class="legend">
+    <span><span class="leg-dot" style="background:#3266ad"></span>Red Bull</span>
+    <span><span class="leg-dot" style="background:#73726c"></span>Mercedes</span>
+    <span><span class="leg-dot" style="background:#e84040"></span>Ferrari</span>
+    <span><span class="leg-dot" style="background:#f5a623"></span>McLaren</span>
+    <span><span class="leg-dot" style="background:#1D9E75"></span>Aston Martin</span>
+  </div>
+  <div class="chart-wrap" style="height:300px;"><canvas id="pitChart" role="img" aria-label="Average pit stop time by team in seconds. Red Bull fastest at 2.18s, Aston Martin slowest at 3.08s.">Red Bull 2.18s, Mercedes 2.44s, Ferrari 2.62s, McLaren 2.78s, Aston Martin 3.08s.</canvas></div>
+  <div style="height:1rem;"></div>
+  <div class="section-label">Pit stop timing by tire compound</div>
+  <div class="chart-wrap" style="height:260px;"><canvas id="compoundChart" role="img" aria-label="Box plot style bar chart of average stint length by tire compound. Soft tires average 15 laps, medium 26 laps, hard 38 laps.">Soft avg 15 laps, Medium avg 26 laps, Hard avg 38 laps.</canvas></div>
+</div>
+
+<div id="qualifying" class="panel">
+  <div class="section-label">Feature weights (drag to adjust)</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;"><span>Qualifying position weight</span><span id="qw-out">60%</span></div>
+      <input type="range" min="0" max="100" value="60" id="qw" oninput="updatePredictions()">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;"><span>Constructor strength</span><span id="cw-out">25%</span></div>
+      <input type="range" min="0" max="100" value="25" id="cw" oninput="updatePredictions()">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;"><span>Previous race form</span><span id="rw-out">15%</span></div>
+      <input type="range" min="0" max="100" value="15" id="rw" oninput="updatePredictions()">
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;"><span>Circuit type fit</span><span id="cfw-out">0%</span></div>
+      <input type="range" min="0" max="100" value="0" id="cfw" oninput="updatePredictions()">
+    </div>
+  </div>
+  <div class="section-label">Predicted race finish — next race</div>
+  <div id="pred-list"></div>
+  <div style="margin-top:1rem; font-size:12px; color:var(--color-text-secondary);">Model simulates a Random Forest–style weighted score. Adjust weights to explore feature importance.</div>
+</div>
+
+<div id="network" class="panel">
+  <div class="section-label">Driver–constructor relationships (career)</div>
+  <svg class="network-svg" viewBox="0 0 660 360" id="netSvg" aria-label="Network diagram showing F1 driver to team connections over their careers"></svg>
+  <div style="margin-top:12px;font-size:12px;color:var(--color-text-secondary);">Nodes sized by career points. Line weight indicates years together.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const DRIVERS = [
+  {pos:1, name:'Verstappen', team:'Red Bull', pts:289, color:'#3266ad'},
+  {pos:2, name:'Hamilton', team:'Mercedes', pts:242, color:'#73726c'},
+  {pos:3, name:'Alonso', team:'Aston Martin', pts:197, color:'#1D9E75'},
+  {pos:4, name:'Leclerc', team:'Ferrari', pts:183, color:'#e84040'},
+  {pos:5, name:'Norris', team:'McLaren', pts:171, color:'#f5a623'},
+  {pos:6, name:'Perez', team:'Red Bull', pts:168, color:'#3266ad'},
+  {pos:7, name:'Sainz', team:'Ferrari', pts:144, color:'#e84040'},
+  {pos:8, name:'Russell', team:'Mercedes', pts:132, color:'#73726c'},
+];
+
+function switchTab(id) {
+  document.querySelectorAll('.tab,.panel').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${id}')"]`).classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+function buildStandings() {
+  const max = DRIVERS[0].pts;
+  document.getElementById('standings-list').innerHTML = DRIVERS.map(d => `
+    <div class="driver-row">
+      <div class="driver-pos">${d.pos}</div>
+      <div class="driver-name">${d.name}</div>
+      <div class="driver-team">${d.team}</div>
+      <div class="bar-cell"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(d.pts/max*100)}%;background:${d.color}"></div></div></div>
+      <div class="driver-pts">${d.pts} pts</div>
+    </div>`).join('');
+}
+
+const pitData = {
+  labels:['Red Bull','Mercedes','Ferrari','McLaren','Aston Martin'],
+  data:[2.18,2.44,2.62,2.78,3.08],
+  colors:['#3266ad','#73726c','#e84040','#f5a623','#1D9E75']
+};
+
+function buildPitChart() {
+  new Chart(document.getElementById('pitChart'), {
+    type:'bar',
+    data:{
+      labels:pitData.labels,
+      datasets:[{
+        label:'Avg pit stop (s)',
+        data:pitData.data,
+        backgroundColor:pitData.colors,
+        borderWidth:0,
+        borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        y:{ beginAtZero:false, min:1.8, max:3.5, ticks:{ callback:v=>v.toFixed(2)+'s' }, grid:{ color:'rgba(128,128,128,0.15)' } },
+        x:{ grid:{ display:false } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('compoundChart'), {
+    type:'bar',
+    data:{
+      labels:['Soft','Medium','Hard'],
+      datasets:[
+        { label:'Min laps', data:[8,18,28], backgroundColor:'rgba(100,100,100,0.15)', borderWidth:0, borderRadius:3 },
+        { label:'Avg laps', data:[15,26,38], backgroundColor:['#e84040','#f5a623','#888'], borderWidth:0, borderRadius:3 },
+        { label:'Max laps', data:[22,36,52], backgroundColor:'rgba(100,100,100,0.1)', borderWidth:0, borderRadius:3 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ stacked:false, grid:{ display:false } },
+        y:{ title:{ display:true, text:'Laps' }, grid:{ color:'rgba(128,128,128,0.15)' } }
+      }
+    }
+  });
+}
+
+const baseScores = [
+  {name:'Verstappen',team:'Red Bull',qual:1,constructor:95,form:92,circuit:88},
+  {name:'Hamilton',team:'Mercedes',qual:3,constructor:82,form:84,circuit:90},
+  {name:'Leclerc',team:'Ferrari',qual:2,constructor:80,form:76,circuit:85},
+  {name:'Norris',team:'McLaren',qual:4,constructor:78,form:82,circuit:80},
+  {name:'Alonso',team:'Aston Martin',qual:5,constructor:76,form:88,circuit:75},
+  {name:'Perez',team:'Red Bull',qual:6,constructor:95,form:70,circuit:72},
+  {name:'Sainz',team:'Ferrari',qual:7,constructor:80,form:74,circuit:78},
+  {name:'Russell',team:'Mercedes',qual:8,constructor:82,form:72,circuit:71},
+];
+
+function updatePredictions() {
+  const qw = +document.getElementById('qw').value;
+  const cw = +document.getElementById('cw').value;
+  const rw = +document.getElementById('rw').value;
+  const cfw = +document.getElementById('cfw').value;
+  const total = qw+cw+rw+cfw||1;
+  document.getElementById('qw-out').textContent = Math.round(qw/total*100)+'%';
+  document.getElementById('cw-out').textContent = Math.round(cw/total*100)+'%';
+  document.getElementById('rw-out').textContent = Math.round(rw/total*100)+'%';
+  document.getElementById('cfw-out').textContent = Math.round(cfw/total*100)+'%';
+
+  const scored = baseScores.map(d => {
+    const qualScore = (9-d.qual)*11;
+    const score = (qualScore*qw + d.constructor*cw + d.form*rw + d.circuit*cfw)/total;
+    return {...d, score};
+  }).sort((a,b)=>b.score-a.score);
+
+  const maxScore = scored[0].score;
+  const teamColors = {'Red Bull':'#3266ad','Mercedes':'#73726c','Ferrari':'#e84040','McLaren':'#f5a623','Aston Martin':'#1D9E75'};
+  document.getElementById('pred-list').innerHTML = scored.map((d,i) => `
+    <div class="driver-row">
+      <div class="driver-pos">${i+1}</div>
+      <div class="driver-name">${d.name}</div>
+      <div class="driver-team">${d.team}</div>
+      <div class="bar-cell"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(d.score/maxScore*100)}%;background:${teamColors[d.team]}"></div></div></div>
+      <div class="driver-pts" style="color:var(--color-text-secondary);font-size:12px;">${Math.round(d.score)}</div>
+    </div>`).join('');
+}
+
+function buildNetwork() {
+  const svg = document.getElementById('netSvg');
+  const W=660, H=360;
+  const teams = [
+    {id:'redbull',name:'Red Bull',x:330,y:90,color:'#3266ad',r:28},
+    {id:'mercedes',name:'Mercedes',x:130,y:200,color:'#73726c',r:24},
+    {id:'ferrari',name:'Ferrari',x:530,y:200,color:'#e84040',r:24},
+    {id:'mclaren',name:'McLaren',x:200,y:310,color:'#f5a623',r:20},
+    {id:'aston',name:'Aston Martin',x:460,y:310,color:'#1D9E75',r:18},
+    {id:'renault',name:'Renault',x:330,y:300,color:'#888',r:16},
+  ];
+  const drivers = [
+    {name:'Verstappen',x:290,y:50,r:18,teams:['redbull']},
+    {name:'Perez',x:380,y:50,r:14,teams:['redbull']},
+    {name:'Hamilton',x:60,y:160,r:22,teams:['mclaren','mercedes']},
+    {name:'Russell',x:120,y:260,r:14,teams:['mercedes']},
+    {name:'Leclerc',x:520,y:140,r:16,teams:['ferrari']},
+    {name:'Sainz',x:590,y:240,r:14,teams:['ferrari']},
+    {name:'Alonso',x:390,y:330,r:20,teams:['renault','ferrari','aston']},
+    {name:'Norris',x:180,y:340,r:15,teams:['mclaren']},
+  ];
+  const edges = [
+    {from:'hamilton',to:'mclaren',w:2},{from:'hamilton',to:'mercedes',w:3},
+    {from:'verstappen',to:'redbull',w:3},{from:'perez',to:'redbull',w:2},
+    {from:'leclerc',to:'ferrari',w:2},{from:'sainz',to:'ferrari',w:2},
+    {from:'alonso',to:'renault',w:2},{from:'alonso',to:'ferrari',w:1.5},{from:'alonso',to:'aston',w:2},
+    {from:'norris',to:'mclaren',w:1.5},{from:'russell',to:'mercedes',w:1.5},
+  ];
+  const allNodes = [...teams, ...drivers];
+  const byId = {};
+  teams.forEach(t=>byId[t.id]=t);
+  drivers.forEach(d=>byId[d.name.toLowerCase()]=d);
+
+  let html = '<defs><marker id="arrow" markerWidth="4" markerHeight="4" refX="4" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 Z" fill="rgba(128,128,128,0.4)"/></marker></defs>';
+
+  edges.forEach(e => {
+    const a = byId[e.from], b = byId[e.to];
+    if(!a||!b) return;
+    html += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="rgba(128,128,128,0.3)" stroke-width="${e.w}"/>`;
+  });
+
+  teams.forEach(t => {
+    html += `<circle cx="${t.x}" cy="${t.y}" r="${t.r}" fill="${t.color}" opacity="0.85"/>`;
+    html += `<text x="${t.x}" y="${t.y+4}" text-anchor="middle" font-size="10" font-weight="500" fill="white">${t.name}</text>`;
+  });
+  drivers.forEach(d => {
+    html += `<circle cx="${d.x}" cy="${d.y}" r="${d.r}" fill="var(--color-background-primary)" stroke="var(--color-border-secondary)" stroke-width="1.5"/>`;
+    html += `<text x="${d.x}" y="${d.y+4}" text-anchor="middle" font-size="10" fill="var(--color-text-primary)">${d.name}</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+buildStandings();
+buildPitChart();
+updatePredictions();
+buildNetwork();
+</script>
